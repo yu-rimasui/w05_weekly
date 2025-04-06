@@ -1,103 +1,152 @@
-import Image from "next/image";
+"use client";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-export default function Home() {
+import WeeklyCalendar from "@/component/WeeklyCalendar";
+import { AddEventModal } from "@/component/EventModal";
+
+const API_ENDPOINT =  "/api/event";
+
+import React, { useState, useEffect } from "react";
+
+const App = () => {
+  // モーダルの開閉
+  const [show, setShow] = useState(false);
+  const modalClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+  // イベントのデータ
+  const [events, setEvents] = useState([]);
+  const initEvent = {
+    id: null,
+    title: "",
+    day: "",
+    h1: "",
+    m1: "",
+    h2: "",
+    m2: "",
+    category: "",
+  };
+  const [event, setEvent] = useState(initEvent);
+
+  // フェッチ
+  let isFirst = false;
+
+  useEffect(() => {
+    if (!isFirst && event.id !== null) {
+      setShow(true);
+    }
+  }, [event]);
+
+  useEffect(() => {
+    fetchEvent();
+  }, []);
+
+  // イベント取得（GET）
+  const fetchEvent = async () => {
+    try {
+      const res = await fetch(`${API_ENDPOINT}`, {
+        method: "GET",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data);
+        console.log("取得：", data);
+      } else {
+        console.error("取得に失敗しました");
+      }
+    } catch (error) {
+      console.error("取得エラー：", error);
+    }
+  };
+  
+  // イベント追加（POST）
+  const addEvent = async (title: string, day: string, h1: string, m1: string, h2: string, m2: string, category: string) => {
+    const id = new Date().toISOString();
+    const body = {
+      method: "POST",
+      id, title, day, h1, m1, h2, m2, category,
+    };
+  
+    try {
+      const res = await fetch(API_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      fetchEvent();
+    } catch (error) {
+      console.error("追加エラー：", error);
+    }
+  };
+  
+  // イベント削除（DELETE）
+  const deleteEvent = async (id: string) => {
+    try {
+      await fetch(`${API_ENDPOINT}/${id}`, {
+        method: "DELETE",
+      });
+      fetchEvent();
+    } catch (error) {
+      console.error("削除エラー：", error);
+    }
+  };
+  
+  // イベント更新（PUT）
+  const editEvent = async (id: string, title: string, day: string, h1: string, m1: string, h2: string, m2: string, category: string) => {
+    const body = {
+      method: "PUT",
+      id,
+      title,
+      day,
+      h1,
+      m1,
+      h2,
+      m2,
+      category,
+    };
+  
+    try {
+      const res = await fetch(API_ENDPOINT, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      fetchEvent();
+    } catch (error) {
+      console.error("更新エラー：", error);
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div style={{ backgroundColor: "#333" }}>
+      <div className="d-flex justify-content-between">
+        <div>
+          <h1 className="mt-3 ms-3 text-light fst-italic">Weekly Schedule</h1>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="eventBtnWrap">
+          <button className="btn btn-secondary eventBtn" onClick={handleShow}>
+            予定追加
+          </button>
+        </div>
+      </div>
+      <AddEventModal
+        show={show}
+        modalClose={modalClose}
+        addEvent={addEvent}
+        deleteEvent={deleteEvent}
+        editEvent={editEvent}
+        event={event}
+        setEvent={setEvent}
+        initEvent={initEvent}
+      />
+      <div className="weeklyCalendar">
+        <WeeklyCalendar events={events} setEvent={setEvent} />
+      </div>
     </div>
   );
-}
+};
+
+export default App;
